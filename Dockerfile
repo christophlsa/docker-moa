@@ -10,7 +10,9 @@ ADD moa /usr/src/app
 
 WORKDIR /usr/src/app
 
-RUN /root/.local/bin/pipenv install
+RUN /root/.local/bin/pipenv install && \
+    /root/.local/bin/pipenv install psycopg2-binary && \
+    /root/.local/bin/pipenv install gunicorn[gevent]
 
 
 FROM python:3.7 AS runtime
@@ -18,14 +20,21 @@ FROM python:3.7 AS runtime
 RUN adduser -q --disabled-password --uid 1000 --gecos "moa,,," moa
 RUN mkdir -p /usr/src/app/venv
 COPY --from=builder /usr/src/app/.venv/ /usr/src/app/.venv/
+# not really needed by good to see the locked dependencies
+COPY --from=builder /usr/src/app/Pipfile.lock /usr/src/app/Pipfile.lock
 
 WORKDIR /usr/src/app
-USER moa
 
 ADD moa /usr/src/app
 ADD config.py /usr/src/app/config.py
+ADD worker.patch /tmp/worker.patch
+RUN patch -p1 < /tmp/worker.patch
+
+RUN chown -R moa:moa /usr/src/app
+
+USER moa
 
 ENV MOA_CONFIG="config.ProductionConfig"
-CMD ["/usr/src/app/.venv/bin/python", "run", "python", "app.py"]
+CMD ["/usr/src/app/.venv/bin/python", "app.py"]
 
 EXPOSE 5000

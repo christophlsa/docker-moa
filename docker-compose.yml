@@ -1,0 +1,33 @@
+version: "3.7"
+
+services:
+  moa:
+    image: ghcr.io/christophlsa/moa:latest
+    command: /usr/src/app/.venv/bin/gunicorn -w 1 -k gevent -t 3600 -b 0.0.0.0:5000 --access-logfile - --forwarded-allow-ips '*' "app:app"
+    ports:
+      - target: 5000
+        published: 5000
+    deploy:
+      replicas: 1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - SECRET_KEY=
+      - TWITTER_CONSUMER_KEY=
+      - TWITTER_CONSUMER_SECRET=
+      - SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://username:password@host/database?sslmode=require
+
+
+  moaworker:
+    image: ghcr.io/christophlsa/moa:latest
+    command: /usr/src/app/.venv/bin/python -m moa.worker
+    deploy:
+      replicas: 1
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    environment:
+      - MOA_CONFIG=ProductionConfig
+      - SECRET_KEY=
+      - TWITTER_CONSUMER_KEY=
+      - TWITTER_CONSUMER_SECRET=
+      - SQLALCHEMY_DATABASE_URI=postgresql+psycopg2://username:password@host/database?sslmode=require
