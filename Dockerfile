@@ -11,7 +11,6 @@ ADD moa /usr/src/app
 WORKDIR /usr/src/app
 
 RUN /root/.local/bin/pipenv install && \
-    /root/.local/bin/pipenv install psycopg2-binary && \
     /root/.local/bin/pipenv install gunicorn[gevent]
 
 
@@ -27,8 +26,6 @@ WORKDIR /usr/src/app
 
 ADD moa /usr/src/app
 ADD config.py /usr/src/app/config.py
-ADD worker.patch /tmp/worker.patch
-RUN patch -p1 < /tmp/worker.patch
 
 RUN chown -R moa:moa /usr/src/app
 
